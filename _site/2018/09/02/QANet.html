@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>QANet-Combining Local Convolution with Global Self-Attention for Reading Comprehension | Awesome Seminar</title>
+<meta name="generator" content="Jekyll v3.7.3" />
+<meta property="og:title" content="QANet-Combining Local Convolution with Global Self-Attention for Reading Comprehension" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Related Resources:" />
+<meta property="og:description" content="Related Resources:" />
+<link rel="canonical" href="http://localhost:4000/2018/09/02/QANet.html" />
+<meta property="og:url" content="http://localhost:4000/2018/09/02/QANet.html" />
+<meta property="og:site_name" content="Awesome Seminar" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-09-02T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"QANet-Combining Local Convolution with Global Self-Attention for Reading Comprehension","dateModified":"2018-09-02T00:00:00+08:00","datePublished":"2018-09-02T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/09/02/QANet.html"},"url":"http://localhost:4000/2018/09/02/QANet.html","description":"Related Resources:","@type":"BlogPosting","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Awesome Seminar" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Awesome Seminar</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">QANet-Combining Local Convolution with Global Self-Attention for Reading Comprehension</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-09-02T00:00:00+08:00" itemprop="datePublished">Sep 2, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><strong>Related Resources:</strong></p>
+
+<ul>
+  <li><a href="https://arxiv.org/abs/1804.09541">Origional Paper</a></li>
+  <li><a href="https://drive.google.com/file/d/1Mw6JZ9k0e8ajfiQ8uI-VP2my96DJINr4/view">Thang Luong’s Slides</a></li>
+  <li><a href="https://medium.com/@minsangkim/implementing-question-answering-networks-with-cnns-5ae5f08e312b">Kim’s Blog (Following example code is taken from Kim’s Blog)</a></li>
+  <li><a href="https://github.com/NLPLearn/QANet">TensorFlow Implementation of QANet (By Kim)</a></li>
+  <li><a href="https://github.com/BangLiu/QANet-PyTorch">PyTorch Implementation of QANet</a></li>
+</ul>
+
+<h1 id="1-abstract">1 Abstract</h1>
+
+<blockquote>
+  <p>Ideas</p>
+</blockquote>
+
+<ul>
+  <li><strong>Idea #1:</strong> Mainstream MC models with <em>RNN and attention</em> are <strong>slow</strong> for both training and inference.</li>
+  <li><strong>Idea #2:</strong> In QANet, encoder only consists of <em>convolution and self-attention</em>.</li>
+  <li><strong>Convolution models local interactions</strong> and <strong>self-attention models global interactions</strong>.</li>
+</ul>
+
+<h2 id="11-lstm-is-slow">1.1 LSTM is slow</h2>
+
+<p>Previous models like BiDAF uses a lot LSTM and is slow.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/BiDAF2.png" alt="" /></p>
+
+<h2 id="12-convolution--self-attention">1.2 Convolution &amp; Self-Attention</h2>
+
+<p>Using convolution to capture local features.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANet_conv.png" alt="" /></p>
+
+<p>Using self-attention to capture global interactions.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANet_selfattn.png" alt="" /></p>
+
+<h1 id="2-introduction">2 Introduction</h1>
+
+<p>Some background information about <em>Machine Reading Comprehension</em> can be found in the <a href="http://fuyw.top/RNet">R-Net Blog</a>.</p>
+
+<p>Previous successful models generally employ two key ingredients:</p>
+
+<ol>
+  <li>RNN for sequential inputs.</li>
+  <li>Attention Mechanism for long term interactions.</li>
+</ol>
+
+<p>However, these model are struggling for long time to train.In this paper:</p>
+
+<p><strong>1. Query and Context Encoder:</strong> exclusivly use <em>convolutions and self-attentions</em> for <em>query and context encoder</em>.</p>
+
+<p><strong>2. Context-Query Attention:</strong> a standard attention is used to learn the interactions between context and questions.</p>
+
+<p><strong>3. Model Encoder Layer:</strong> resulting representation is encoded again with the recurrence-free encoder.</p>
+
+<p><strong>4. Output Layer:</strong> a task-specific layer, same stratege as in <a href="http://arxiv.org/abs/1611.01603.">Seo et al., (2016)</a>.</p>
+
+<h1 id="3-model">3 Model</h1>
+
+<h2 id="31-problem-formulation">3.1 Problem Formulation</h2>
+
+<p>Context paragraph with <script type="math/tex">n</script> words:</p>
+
+<script type="math/tex; mode=display">C = \lbrace c_1, c_2, \cdots, c_n \rbrace</script>
+
+<p>Query sentence with <script type="math/tex">m</script> words:</p>
+
+<script type="math/tex; mode=display">Q = \lbrace q_1, q_2, \cdots, q_m \rbrace</script>
+
+<p>Output span <script type="math/tex">S</script>:</p>
+
+<script type="math/tex; mode=display">S = \lbrace{ c_i, c_{i+1}, \cdots, c_{i+j} \rbrace}</script>
+
+<p>In the following, we’ll use <script type="math/tex">x</script> to denote both the original word and its embedded vector.</p>
+
+<h2 id="32-model-overview">3.2 Model Overview</h2>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANet.png" alt="" /></p>
+
+<h3 id="321-input-embedding-layer">3.2.1 Input Embedding Layer</h3>
+
+<p>Embedding of each word <script type="math/tex">w</script> is obtained by concatenating its <em>word embedding</em> and <em>character embedding</em>.</p>
+
+<script type="math/tex; mode=display">\text{Embedding_of_word = word_embedding + character_embedding}</script>
+
+<p>where word embedding <script type="math/tex">x_w \in \mathbb R^{p_1}</script> and character embedding <script type="math/tex">x_c \in \mathbb R^{p_2}</script>.</p>
+
+<p>The output of a given word <script type="math/tex">x</script> is the concatenation:</p>
+
+<script type="math/tex; mode=display">\left[ x_w ; x_c \right] \in \mathbb R^{p_1 + p_2}</script>
+
+<p><a href="https://github.com/NLPLearn/QANet">Kim</a> implements the embedding layer with a similar approach as <a href="https://arxiv.org/abs/1508.06615">(Kim et al., 2016)</a>.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/CharCNN.png" alt="" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="n">tf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">32</span>  <span class="c"># num_batch</span>
+<span class="n">PL</span> <span class="o">=</span> <span class="mi">400</span>  <span class="c"># passage_length</span>
+<span class="n">QL</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c"># question_length</span>
+<span class="n">nh</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c"># number of heads in multi-head self attention. </span>
+<span class="n">char_lim</span> <span class="o">=</span> <span class="mi">16</span>  <span class="c"># character_limit</span>
+<span class="n">dim</span> <span class="o">=</span> <span class="mi">128</span>  <span class="c"># dimension</span>
+<span class="n">dim_char</span> <span class="o">=</span> <span class="mi">32</span>  <span class="c"># character_dimension</span>
+<span class="n">test_para_limit</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">test_ques_limit</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">word_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s">"glove.840B.300d.txt"</span><span class="p">)</span>
+
+<span class="n">context</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">PL</span><span class="p">],</span> <span class="s">"context"</span><span class="p">)</span>
+<span class="n">quesion</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">QL</span><span class="p">],</span> <span class="s">"question"</span><span class="p">)</span>
+<span class="n">context_char</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">PL</span><span class="p">,</span> <span class="n">char_lim</span><span class="p">],</span> <span class="s">"context_char"</span><span class="p">)</span>
+<span class="n">question_char</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">QL</span><span class="p">,</span> <span class="n">char_lim</span><span class="p">],</span> <span class="s">"question_char"</span><span class="p">)</span>
+<span class="n">y1</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">PL</span><span class="p">],</span> <span class="s">"answer_index1"</span><span class="p">)</span>
+<span class="n">y2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">placeholder</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="n">PL</span><span class="p">],</span> <span class="s">"answer_index2"</span><span class="p">)</span>
+
+<span class="c"># Pretrained Word Vectors -- fixed during traing</span>
+<span class="n">word_mat</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span><span class="s">"word_mat"</span><span class="p">,</span> <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span>
+    <span class="n">word_mat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">trainable</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="c"># Character Vectors -- trainable</span>
+<span class="n">char_mat</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">get_variable</span><span class="p">(</span>
+    <span class="s">"char_mat"</span><span class="p">,</span> <span class="n">initializer</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">char_mat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+
+<span class="c"># Context and Question Word's character embedding</span>
+<span class="n">context_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">embedding_lookup</span><span class="p">(</span>
+    <span class="n">char_mat</span><span class="p">,</span> <span class="n">context_char</span><span class="p">),</span> <span class="p">[</span><span class="n">N</span> <span class="o">*</span> <span class="n">PL</span><span class="p">,</span> <span class="n">char_lim</span><span class="p">,</span> <span class="n">dim_char</span><span class="p">])</span>
+<span class="n">quesion_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">embedding_lookup</span><span class="p">(</span>
+    <span class="n">char_mat</span><span class="p">,</span> <span class="n">question_char</span><span class="p">),</span> <span class="p">[</span><span class="n">N</span> <span class="o">*</span> <span class="n">QL</span><span class="p">,</span> <span class="n">char_lim</span><span class="p">,</span> <span class="n">dim_char</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p><code class="highlighter-rouge">context_char_emb</code> and <code class="highlighter-rouge">question_char_emb</code> are put through a single layer of convolution and max-pooling.</p>
+
+<p>The concatenated <code class="highlighter-rouge">context_emb = tf.concat([context_emb, context_char_emb])</code> word embedding is then input to a highway network.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># convolution</span>
+<span class="n">context_char_emb</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">context_char_emb</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span>
+                        <span class="n">bias</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">"char_conv"</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="n">quesion_char_emb</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">quesion_char_emb</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span>
+                        <span class="n">bias</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">relu</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">"char_conv"</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<span class="c"># max-pooling</span>
+<span class="n">context_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">context_char_emb</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">quesion_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_max</span><span class="p">(</span><span class="n">quesion_char_emb</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">context_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">context_char_emb</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="n">PL</span><span class="p">,</span> <span class="n">dim</span><span class="p">])</span>
+<span class="n">quesion_char_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">quesion_char_emb</span><span class="p">,</span> <span class="p">[</span><span class="n">N</span><span class="p">,</span> <span class="n">QL</span><span class="p">,</span> <span class="n">dim</span><span class="p">])</span>
+
+<span class="c"># word embedding</span>
+<span class="n">context_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">embedding_lookup</span><span class="p">(</span><span class="n">word_mat</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+<span class="n">question_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">embedding_lookup</span><span class="p">(</span><span class="n">word_mat</span><span class="p">,</span> <span class="n">quesion</span><span class="p">)</span>
+
+<span class="c"># concatenation of word embedding and character embedding</span>
+<span class="n">context_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">context_emb</span><span class="p">,</span> <span class="n">context_char_emb</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">question_emb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">question_emb</span><span class="p">,</span> <span class="n">quesion_char_emb</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c"># 2-layer highway network</span>
+<span class="n">context_emb</span> <span class="o">=</span> <span class="n">highway</span><span class="p">(</span><span class="n">context_emb</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s">"highway"</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+<span class="n">question_emb</span> <span class="o">=</span> <span class="n">highway</span><span class="p">(</span><span class="n">question_emb</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s">"highway"</span><span class="p">,</span> <span class="n">reuse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="322-embedding-encoder-layer">3.2.2 Embedding Encoder Layer</h3>
+
+<p>Outputs of the embedding layer is input into the encoder layer to generate corresponding context and question representation.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANET1.png" alt="" /></p>
+
+<p>The encoder layer is a <strong>stack</strong> of basic building block:</p>
+
+<script type="math/tex; mode=display">\left[\text{convolution-layer} \times \sharp + \text{self-attention-layer} + \text{feed-forward-layer} \right]</script>
+
+<p>and it uses <strong>depthwise separable convolutions</strong> <a href="http://arxiv.org/abs/1610.02357">(Chollet., 2016)</a> <a href="https://arxiv.org/abs/1706.03059">(Kaiser et al., 2017)</a> rather than traditional ones.</p>
+
+<p>The kernel size is <script type="math/tex">7</script>, the number of filters is <script type="math/tex">d=128</script> and the number of convert layers within a block is <script type="math/tex">4</script>.</p>
+
+<p>For the <strong>self-attention-layer</strong>, we adopt the multi-head attention mechanism defined in <a href="http://arxiv.org/abs/1706.03762">(Vaswani et al., 2017)</a>.</p>
+
+<p>For an input <script type="math/tex">x</script> and a given operation <script type="math/tex">f</script>, the output is :</p>
+
+<script type="math/tex; mode=display">f(\text{layernorm}(x)) + x</script>
+
+<p>Note that the input of this layer is a vector of dimension <script type="math/tex">p_1 + p_2 = 500</script> for each individual word, which is immediately mapped to <script type="math/tex">d=128</script> by a one-dimensional convolution.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANET2.png" alt="" /></p>
+
+<h3 id="323-context-query-attention-layer">3.2.3 Context-Query Attention Layer</h3>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/BiDAF3.png" alt="" /></p>
+
+<p>This module is <strong>almost the same</strong> as every previous reading comprehension models, such as <strong>BiDAF</strong>  <a href="http://arxiv.org/abs/1611.01603.">(Seo et al., 2016)</a> and <strong>DCN</strong> <a href="http://arxiv.org/abs/1611.01604">(Xiong et al., 2016)</a> .</p>
+
+<p>We use <script type="math/tex">C \in \mathbb R^{d \times n}</script> and <script type="math/tex">Q \in \mathbb R^{d \times m}</script> to denote the encoded context and query.</p>
+
+<p><strong>Step 1. Calculate Similarity Matrix:</strong></p>
+
+<p>Firstly, compute the similarites between each pair of context and query words, rendering a similarity matrix <script type="math/tex">S \in \mathbb R^{n\times m}</script>.</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+S  = \begin{pmatrix}
+    f(q_1, c_1) &f(q_1, c_2) & \cdots & f(q_1, c_m) \\\\
+    f(q_2, c_1) &f(q_2, c_2) & \cdots & f(q_2, c_m) \\\\
+    \vdots & \vdots & \ddots & \vdots \\\\
+    f(q_n, c_1) &f(q_n, c_2) & \cdots & f(q_n, c_m) 
+\end{pmatrix} 
+= \begin{pmatrix}
+    s_{11} & s_{12} & \cdots & s_{1m} \\\\
+    s_{21} & s_{22} & \cdots & s_{2m} \\\\
+    \vdots & \vdots & \ddots & \vdots \\\\
+    s_{n1} & s_{n2} & \cdots & s_{nm}
+\end{pmatrix} %]]></script>
+
+<p>Similarity function used here is the trilinear function:</p>
+
+<script type="math/tex; mode=display">f(q, c) = W_0 \left[ q, c, q \odot c\right]</script>
+
+<p>where <script type="math/tex">\odot</script> is the element-wise multiplication and <script type="math/tex">W_0</script> is a trainable variable.</p>
+
+<p><strong>Step 2. Calculate Context2Query Attention:</strong></p>
+
+<p>Then, normalize each row of <script type="math/tex">S</script> by applying the softmax function, getting a matrix <script type="math/tex">\bar S</script>.</p>
+
+<script type="math/tex; mode=display">\bar S = \begin{pmatrix}
+\text {softmax} \left( s_{11} , s_{12}, \cdots, s_{1m} \right)  \\\\
+\text {softmax} \left( s_{21} , s_{22}, \cdots, s_{2m} \right)  \\\\
+\vdots \\\\
+\text {softmax} \left( s_{n1} , s_{n2}, \cdots, s_{nm} \right)
+\end{pmatrix} \in \mathbb R^{n \times m}</script>
+
+<p>The <em>Context-to-Query attention</em> is computed as <script type="math/tex">A = \bar S \cdot Q^T \in \mathbb R^{n \times d}</script>.</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+A = 
+\begin{pmatrix}
+    w_{11} & w_{12} & \cdots & w_{1m} \\\\
+    w_{21} & w_{22} & \cdots & w_{2m} \\\\
+    \vdots & \vdots & \ddots & \vdots \\\\
+    w_{n1} & w_{n2} & \cdots & w_{nm}
+\end{pmatrix}
+\begin{pmatrix}
+    q_{11} & q_{12} & \cdots & q_{1d} \\\\
+    q_{21} & q_{22} & \cdots & q_{2d} \\\\
+    \vdots & \vdots & \ddots & \vdots \\\\
+    q_{m1} & q_{m2} & \cdots & q_{md}
+\end{pmatrix}
+= 
+\begin{pmatrix}
+    \sum \limits_ i w_{1i} q_{i1} & \sum \limits_ i w_{1i} q_{i2} & \cdots & \sum \limits_ i w_{1i} q_{id} \\\\
+    \sum \limits_ i w_{2i} q_{i1} & \sum \limits_ i w_{2i} q_{i2} & \cdots & \sum \limits_ i w_{2i} q_{id} \\\\
+    \vdots & \vdots & \ddots & \vdots \\\\
+    \sum \limits_ i w_{ni} q_{i1} & \sum \limits_ i w_{ni} q_{i2} & \cdots & \sum \limits_ i w_{ni} q_{id}
+\end{pmatrix} %]]></script>
+
+<p><strong>Step 3. Calculate Query2Context Attention:</strong></p>
+
+<p>For the <em>Query-to-Context attention</em>, QANet follows DCN attention <a href="http://arxiv.org/abs/1611.01604">(Xiong et al., 2016)</a>.</p>
+
+<p>It computes the column normalized matrix <script type="math/tex">\bar {\bar S} \in \mathbb R^{n \times m}</script> by softmax function, and the <em>query-to-context attention</em> <script type="math/tex">B</script> is :</p>
+
+<script type="math/tex; mode=display">B = \bar S \cdot \bar {\bar S}^\top \cdot C^\top \in \mathbb R^{n \times d}</script>
+
+<h3 id="324-model-encoder-layer">3.2.4 Model Encoder Layer</h3>
+
+<p>Similar to <a href="http://arxiv.org/abs/1611.01603.">(Seo et al., 2016)</a> the input of this layer at each position is <script type="math/tex">\left[ c, a, c \odot a, c \odot b \right]</script>, where <script type="math/tex">a</script> and <script type="math/tex">b</script> are respectively a row of attention matrix <script type="math/tex">A</script> and <script type="math/tex">B</script>.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">context</span> <span class="o">=</span> <span class="n">residual_block</span><span class="p">(</span><span class="n">context_emb</span><span class="p">,</span> <span class="n">num_blocks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_conv_layers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+                         <span class="n">num_filters</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="n">nh</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s">"Encoder_Residual_Block"</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">question</span> <span class="o">=</span> <span class="n">residual_block</span><span class="p">(</span><span class="n">question_emb</span><span class="p">,</span> <span class="n">num_blocks</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_conv_layers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+                          <span class="n">num_filters</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">num_heads</span><span class="o">=</span><span class="n">nh</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s">"Encoder_Residual_Block"</span><span class="p">,</span>
+                          <span class="n">reuse</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>  <span class="c"># Share the weights between passage and question</span>
+                          <span class="n">bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+<span class="n">tiled_context</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">QL</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">tiled_question</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">PL</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">S</span> <span class="o">=</span> <span class="n">trilinear</span><span class="p">([</span><span class="n">tiled_context</span><span class="p">,</span> <span class="n">tiled_question</span><span class="p">,</span> <span class="n">tiled_context</span> <span class="o">*</span> <span class="n">tiled_question</span><span class="p">])</span>
+<span class="n">S_</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">S</span><span class="p">)</span>
+<span class="n">S_T</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">context2question</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">S_</span><span class="p">,</span> <span class="n">question</span><span class="p">)</span>
+<span class="n">question2context</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">S_</span><span class="p">,</span> <span class="n">S_T</span><span class="p">),</span> <span class="n">context</span><span class="p">)</span>
+<span class="n">attention_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">context</span><span class="p">,</span> <span class="n">context2question</span><span class="p">,</span> <span class="n">context</span> <span class="o">*</span> <span class="n">context2question</span><span class="p">,</span> <span class="n">context</span> <span class="o">*</span> <span class="n">question2context</span><span class="p">]</span>
+</code></pre></div></div>
+
+<h3 id="325-output-layer">3.2.5 Output Layer</h3>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/QANET3.png" alt="" /></p>
+
+<p>Output layer is task-specific.</p>
+
+<p>For span selection, this paper follows the strategy of <a href="http://arxiv.org/abs/1611.01603.">(Seo et al., 2016)</a> to predict the probability of each position in the context being the start or the end of an answer span.</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{align}
+    p^1 &= \text{softmax}(W_1 \left[ M_0 ; M_1 \right])  \\\\
+    p^2 &= \text{softmax}(W_2 \left[ M_0; M_2 \right])
+\end{align} %]]></script>
+
+<p>where <script type="math/tex">W_1</script> and <script type="math/tex">W_2</script> are two trainable variables and <script type="math/tex">M_0, M_1, M_2</script> are respectively the outputs of the three model encoders, from bottom to top.</p>
+
+<p>The objective function is defined as the negative sum of the log probabilities of the predictied distributions indexed by true start and end indices, averaged over all the training examples:</p>
+
+<script type="math/tex; mode=display">L(\theta) = - \frac 1 N \sum_{i}^N \left[ \log(p^1_{y^1_i}) + \log(p^2_{y^2_i}) \right]</script>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">inputs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">attention_outputs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">encoder_inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">conv</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">"input_projection"</span><span class="p">)]</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="n">encoder_inputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="n">residual_block</span><span class="p">(</span><span class="n">encoder_inputs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                       <span class="n">num_blocks</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+                       <span class="n">num_conv_layers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                       <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                       <span class="n">num_filters</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span>
+                       <span class="n">num_heads</span><span class="o">=</span><span class="n">nh</span><span class="p">,</span>
+                       <span class="n">scope</span><span class="o">=</span><span class="s">"Model_Encoder"</span><span class="p">,</span>
+                       <span class="n">bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                       <span class="n">reuse</span><span class="o">=</span><span class="bp">True</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c"># only use the first and second output of stacked encoder for the first answer probability calculation</span>
+<span class="n">start_prob</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">encoder_inputs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">encoder_inputs</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">"start_pointer"</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c"># use the first and THIRD output of stacked encoder for the last answer probability calculation</span>
+<span class="n">end_prob</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">conv</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">encoder_inputs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">encoder_inputs</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">"end_pointer"</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c"># We calculate the loss</span>
+<span class="n">losses</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax_cross_entropy_with_logits</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">start_prob</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">y1</span><span class="p">)</span>
+<span class="n">losses2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">softmax_cross_entropy_with_logits</span><span class="p">(</span><span class="n">logits</span><span class="o">=</span><span class="n">end_prob</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">y2</span><span class="p">)</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_mean</span><span class="p">(</span><span class="n">losses</span> <span class="o">+</span> <span class="n">losses2</span><span class="p">)</span>
+</code></pre></div></div>
+
+  </div>
+
+
+  <a class="u-url" href="/2018/09/02/QANet.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+<!--     <h2 class="footer-heading">Awesome Seminar</h2>
+ -->
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Awesome Seminar</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>A website for sharing seminar notes.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
