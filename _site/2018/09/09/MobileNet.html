@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>MobileNetV2: Inverted Residuals and Linear Bottlenecks | Awesome Seminar</title>
+<meta name="generator" content="Jekyll v3.7.3" />
+<meta property="og:title" content="MobileNetV2: Inverted Residuals and Linear Bottlenecks" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="chollet 对 separable convs 的评论：" />
+<meta property="og:description" content="chollet 对 separable convs 的评论：" />
+<link rel="canonical" href="http://localhost:4000/2018/09/09/MobileNet.html" />
+<meta property="og:url" content="http://localhost:4000/2018/09/09/MobileNet.html" />
+<meta property="og:site_name" content="Awesome Seminar" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-09-09T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"MobileNetV2: Inverted Residuals and Linear Bottlenecks","dateModified":"2018-09-09T00:00:00+08:00","datePublished":"2018-09-09T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/09/09/MobileNet.html"},"description":"chollet 对 separable convs 的评论：","@type":"BlogPosting","url":"http://localhost:4000/2018/09/09/MobileNet.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Awesome Seminar" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Awesome Seminar</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">MobileNetV2: Inverted Residuals and Linear Bottlenecks</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-09-09T00:00:00+08:00" itemprop="datePublished">Sep 9, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p>chollet 对 separable convs 的评论：</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/fchollet_t1.png" alt="" /></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/fchollet_t2.png" alt="" /></p>
+
+<p><strong>Related Resources:</strong></p>
+
+<ul>
+  <li><a href="https://arxiv.org/abs/1704.04861">MobileNetV1 (Howard et al. 2017)</a></li>
+  <li><a href="https://arxiv.org/abs/1801.04381">MobileNetV2 (Sandler et al. 2018)</a></li>
+</ul>
+
+<h1 id="1-intro">1 Intro</h1>
+
+<p>MobileNet 从实际出发，考虑 mobile and embedded applications 中深度学习模型应用效率的问题。</p>
+
+<p>MobileNet is specifically tailored for mobile and resource constrained environments. It pushes SOTA for mobile tailored CV models, by significantly decreasing the number of operations and memory needed while retaining the same accuracy.</p>
+
+<p>MobileNet is built primarily from depthwise separable convolutions initially introduced in <a href="https://www.di.ens.fr/data/publications/papers/phd_sifre.pdf">(Sifre. 2014)</a> and subsequently used in Inception models<a href="https://arxiv.org/pdf/1502.03167.pdf">(Ioffe and Szegedy. 2015)</a> to reduce the computation in the first few layers.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobilenets.png" alt="" /></p>
+
+<h1 id="2-depthwise-separable-convolution">2 Depthwise Separable Convolution</h1>
+
+<h2 id="21-two-layers">2.1 Two Layers</h2>
+
+<blockquote>
+  <p>分而治之</p>
+</blockquote>
+
+<p>The basic idea is to replace a full convolutional operator with a factorized version that splits convolution into two separate layers:</p>
+
+<p><strong>Layer 1 - Depthwise Convolution:</strong> performs lightweight filtering by applying a single convolutional filter per input channel.</p>
+
+<p><strong>Layer 2 - Pointwise Convolution:</strong> a 1x1 convolution which is responsible for building new features through computing linear combinations of the input channels.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/separable_conv.png" alt="" /></p>
+
+<h2 id="22-comparison-with-standard-convolution">2.2 Comparison with Standard Convolution</h2>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/replace_conv.png" alt="" /></p>
+
+<p><strong>Standard Convolution:</strong> filters and combines input in one step:</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{cases}
+	\text{input feature map } F: & D_F \times D_F \times M \\\\
+	\text{output feature map } G: & D_F \times D_F \times N \\\\
+	N \text{ convolution kernel }: & D_K \times D_K \times M \times N \\\\
+	\text{computation cost :} & D_K \cdot D_K \cdot M\cdot N \cdot D_F \cdot D_F
+\end{cases} %]]></script>
+
+<p><strong>Depthwise Separable Convolution:</strong> use two layers separately for filtering and combining:</p>
+
+<script type="math/tex; mode=display">% <![CDATA[
+\begin{cases}
+	\text{input feature map } F: & D_F \times D_F \times M \\\\
+	\text{Depthwise Convoluton Cost:} & D_K \cdot D_K \cdot M \cdot D_F \cdot D_F \\\\
+	\text{Pointwise Convolution Cost:} & M \cdot N \cdot D_F \cdot D_F
+\end{cases} %]]></script>
+
+<p>By expressing convoluiton as a two step process of filtering and combining we get a reduction in computation of:</p>
+
+<script type="math/tex; mode=display">\frac{D_K \cdot D_K \cdot M \cdot D_F \cdot D_F + M \cdot N \cdot D_F \cdot D_F}{D_K \cdot D_K \cdot M\cdot N \cdot D_F \cdot D_F} = \frac 1 N + \frac {1} {D^2_K}</script>
+
+<p>可以看到 output feature map 的 channel 越大、卷积核 filter size 越大，用 depthwise separable convoluiton 可以节省更多的计算资源。</p>
+
+<h1 id="3-mobilenetv1">3 MobileNetV1</h1>
+
+<p>All layers are followed by a batch norm and ReLU nonlinearity except the final fully connected layer.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobilev1_architect.png" alt="" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">_conv_block</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="s">"""Adds an initial convolution layer (with batch normalization and relu6).
+
+	# Arguments
+		inputs: Input tensor
+		filters: dimensionality of the output space (num of output filters in the convolution).
+		alpha: controls the width of the network
+		kernel: conv filter
+    """</span>
+    <span class="n">channel_axis</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">backend</span><span class="o">.</span><span class="n">image_data_format</span><span class="p">()</span> <span class="o">==</span> <span class="s">'channels_first'</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">filters</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">filters</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ZeroPadding2D</span><span class="p">(</span><span class="n">padding</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv1_pad'</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span>
+                      <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">,</span>
+                      <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                      <span class="n">strides</span><span class="o">=</span><span class="n">strides</span><span class="p">,</span>
+                      <span class="n">name</span><span class="o">=</span><span class="s">'conv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">layers</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="mf">6.</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv1_relu'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">_depthwise_conv_block</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">pointwise_conv_filters</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span>
+                          <span class="n">depth_multiplier</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="s">"""Adds a depthwise convolution block.
+
+    A depthwise convolution block consists of a depthwise conv,
+    batch normalization, relu6, pointwise convolution,
+    batch normalization and relu6 activation.
+
+    # Arguments
+        inputs: Input tensor
+        pointwise_conv_filters: the dimensionality of the output space
+            (i.e. the number of output filters in the pointwise convolution).
+        alpha: controls the width of the network.
+            - If `alpha` &lt; 1.0, proportionally decreases the number
+                of filters in each layer.
+            - If `alpha` &gt; 1.0, proportionally increases the number
+                of filters in each layer.
+            - If `alpha` = 1, default number of filters from the paper
+                 are used at each layer.
+        depth_multiplier: The number of depthwise convolution output channels
+            for each input channel.
+            The total number of depthwise convolution output
+            channels will be equal to `filters_in * depth_multiplier`.
+        strides: An integer or tuple/list of 2 integers.
+        block_id: Integer, a unique identification designating
+            the block number.
+    """</span>
+    <span class="n">channel_axis</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">backend</span><span class="o">.</span><span class="n">image_data_format</span><span class="p">()</span> <span class="o">==</span> <span class="s">'channels_first'</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">pointwise_conv_filters</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">pointwise_conv_filters</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">strides</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">inputs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ZeroPadding2D</span><span class="p">(((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+                                 <span class="n">name</span><span class="o">=</span><span class="s">'conv_pad_</span><span class="si">%</span><span class="s">d'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">DepthwiseConv2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                               <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span> <span class="k">if</span> <span class="n">strides</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">else</span> <span class="s">'valid'</span><span class="p">,</span>
+                               <span class="n">depth_multiplier</span><span class="o">=</span><span class="n">depth_multiplier</span><span class="p">,</span>
+                               <span class="n">strides</span><span class="o">=</span><span class="n">strides</span><span class="p">,</span>
+                               <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                               <span class="n">name</span><span class="o">=</span><span class="s">'conv_dw_</span><span class="si">%</span><span class="s">d'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv_dw_</span><span class="si">%</span><span class="s">d_bn'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="mf">6.</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv_dw_</span><span class="si">%</span><span class="s">d_relu'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">pointwise_conv_filters</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                      <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                      <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                      <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                      <span class="n">name</span><span class="o">=</span><span class="s">'conv_pw_</span><span class="si">%</span><span class="s">d'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="s">'conv_pw_</span><span class="si">%</span><span class="s">d_bn'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">layers</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="mf">6.</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'conv_pw_</span><span class="si">%</span><span class="s">d_relu'</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">x</span> <span class="o">=</span> <span class="n">_conv_block</span><span class="p">(</span><span class="n">img_input</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span>
+                          <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span>
+                          <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span>
+                          <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span>
+                          <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">_depthwise_conv_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1024</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">depth_multiplier</span><span class="p">,</span> <span class="n">block_id</span><span class="o">=</span><span class="mi">13</span><span class="p">)</span>
+
+<span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">))</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">GlobalAveragePooling2D</span><span class="p">()(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'reshape_1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">dropout</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'dropout'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                  <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                  <span class="n">name</span><span class="o">=</span><span class="s">'conv_preds'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'softmax'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'act_softmax'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="n">classes</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s">'reshape_2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h1 id="4-mobilenetv2">4 MobileNetV2</h1>
+
+<p><a href="https://arxiv.org/abs/1801.04381">(Sandler et al. 2018)</a> proposed MobileNetV2 which is very similar to the original MobileNet, except that it uses inverted residual blocks with bottlenecking features. It has a drastically lower parameter count than the original MobileNet.</p>
+
+<h2 id="41-linear-bottlenecks">4.1 Linear Bottlenecks</h2>
+
+<p>对一个 n 层的网络，第 i 层输出一个 h x w x d 的 activation tensor ，可以看作 d 维 h x w 的 pixels。</p>
+
+<blockquote>
+  <p>Manifold of Interest</p>
+</blockquote>
+
+<p>Informally, for an input set of real images, we say that the set of layer activations forms a “manifold of interst”.</p>
+
+<p>每一层的 layer activations 可以被映射到一个低维子空间：</p>
+
+<p>It has been long assumed that manifolds of interst in neural networks could be embedded in low-dimensional subspaces.</p>
+
+<p>In other words, when we look at all inividual d-channel pixels of a deep convolutional layer, the information encoded in those values actually lie in some manifold, which in turn is embeddable into a low dimensional subspace.</p>
+
+<p>下面解释了些 ReLU + manifold of interst + low-dimension embedding，但没看懂：</p>
+
+<p>If a result of a layer transformation ReLU(Bx) has a non-zero volume S, the points mapped to interior S are obtained via a linear transformation B of the input, thus indicating that <strong>the part of the input space corresponding to the full dimensional output, is limited to a linear transformation.</strong></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobile_relu.png" alt="" /></p>
+
+<p>文章总结了 the manifold of interst should lie in a low-dimensional subspace of the higher-dimensional activation space 的亮点性质:</p>
+
+<ol>
+  <li>If the manifold of interest remains non-zero volume after ReLU transformation, it corresponds to a linear transformation.</li>
+  <li>ReLU is capable of perserving complete information about the input manifold, but only if the input manifold lies in a low-dimensional subspace of the input space.</li>
+</ol>
+
+<blockquote>
+  <p>An empirical hint</p>
+</blockquote>
+
+<p>These two insights provides with an empirical hint for optimizing existing nueral architectures:</p>
+
+<ul>
+  <li>Assuming the manifold of interst is low-dimensional we can capture this by inserting <em>linear bottleneck</em> layers into the convolutional blocks.</li>
+</ul>
+
+<p>实验结果证明使用 linear layer 非常重要，因为非线性会损失很多信息：</p>
+
+<p>Experimental evidence suggests that using linear layers is crucial as it prevents nonlinearities from destroying too much information.</p>
+
+<p>下图 (a) 是传统的 3x3 卷积，(b) 是 depthwise conv + pointwise conv 的简单 separable conv, (c) 是加了 linear bottleneck 的 separable conv, (d) 是加了 expansion 的 separable conv。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobilenetV2.png" alt="" /></p>
+
+<h2 id="42-inverted-residuals">4.2 Inverted residuals</h2>
+
+<blockquote>
+  <p>Residual Block</p>
+</blockquote>
+
+<p><a href="https://arxiv.org/abs/1512.03385">(He et al. 2015)</a> proposed a <em>bottleneck</em> design for ResNet to reduce training time.</p>
+
+<p>The residual block has 3 layers: 1x1, 3x3, and 1x1 convolutions, where the 1x1 layers are responsible for <strong>reducing and then increasing (restoring) dimensions</strong>, leaving the 3x3 layer a bottleneck with smaller input/output dimensions.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/bottleneck_he.png" alt="" /></p>
+
+<p>下图展示了传统 Residual block 和 Inverted residual block 的不同，在 Residual block 中是先降维后升维，而在 Inverted residual block 中是先升维再降维。所以 Residual block 是两头大、中间小，而 Inverted residual block 是两头小、中间大。</p>
+
+<p>However, inspired by the intuition that the bottlenecks actually contain all the necessary information, while an expansion layer acts merely as an implementation detail that accompanies a non-linear transformation of the tensor, we use shortcuts directly between the bottlenecks.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobile_Residule.png" alt="" /></p>
+
+<p>实验证明在 bottleneck 加入 linear bottleneck 比 nonlinear bottlenck 的效果好：</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/residual_effect.png" alt="" /></p>
+
+<p>Operators for Bottleneck residual block:</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/bottleneck_t1.png" alt="" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">_inverted_res_block</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">expansion</span><span class="p">,</span> <span class="n">stride</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">block_id</span><span class="p">):</span>
+    <span class="s">"""
+        x = _inverted_res_block(x, filters=24, alpha=alpha, stride=2,
+                            expansion=6, block_id=1)
+    """</span>
+    <span class="n">in_channels</span> <span class="o">=</span> <span class="n">backend</span><span class="o">.</span><span class="n">int_shape</span><span class="p">(</span><span class="n">inputs</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">pointwise_conv_filters</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">filters</span> <span class="o">*</span> <span class="n">alpha</span><span class="p">)</span>
+    <span class="n">pointwise_filters</span> <span class="o">=</span> <span class="n">_make_divisible</span><span class="p">(</span><span class="n">pointwise_conv_filters</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">inputs</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="s">'block_{}_'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">block_id</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">block_id</span><span class="p">:</span>
+        <span class="c"># Expand</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">expansion</span> <span class="o">*</span> <span class="n">in_channels</span><span class="p">,</span>
+                          <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                          <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                          <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                          <span class="n">activation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                          <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'expand'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                                      <span class="n">momentum</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span>
+                                      <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'expand_BN'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="mf">6.</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'expand_relu'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="s">'expanded_conv_'</span>
+
+    <span class="c"># Depthwise</span>
+    <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ZeroPadding2D</span><span class="p">(</span><span class="n">padding</span><span class="o">=</span><span class="n">correct_pad</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                                 <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'pad'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">DepthwiseConv2D</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                               <span class="n">strides</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span>
+                               <span class="n">activation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                               <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                               <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span> <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s">'valid'</span><span class="p">,</span>
+                               <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'depthwise'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                                  <span class="n">momentum</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span>
+                                  <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'depthwise_BN'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="mf">6.</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'depthwise_relu'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="c"># Project</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">pointwise_filters</span><span class="p">,</span>
+                      <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                      <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                      <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                      <span class="n">activation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'project'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span>
+        <span class="n">epsilon</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.999</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'project_BN'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">in_channels</span> <span class="o">==</span> <span class="n">pointwise_filters</span> <span class="ow">and</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">layers</span><span class="o">.</span><span class="n">Add</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'add'</span><span class="p">)([</span><span class="n">inputs</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">x</span>
+</code></pre></div></div>
+
+<h2 id="43-architecture">4.3 Architecture</h2>
+
+<p>分成 stride = 1 和 2 两种 bottleneck block，只有在 stride = 1 时加 residual。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobilev2architect.png" alt="" /></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobilenet12.png" alt="" /></p>
+
+<h2 id="44-experiment">4.4 Experiment</h2>
+
+<p>实验结果证明 MNet V2 在仅损失少量准确度的条件下，大幅减少了模型参数数量。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobile_result.png" alt="" /></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/mobile_result2.png" alt="" /></p>
+
+  </div>
+
+
+  <a class="u-url" href="/2018/09/09/MobileNet.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+<!--     <h2 class="footer-heading">Awesome Seminar</h2>
+ -->
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Awesome Seminar</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>A website for sharing seminar notes.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

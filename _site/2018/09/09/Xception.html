@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+  <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Xception: Deep Learning with Depthwise Separable Convolutions | Awesome Seminar</title>
+<meta name="generator" content="Jekyll v3.7.3" />
+<meta property="og:title" content="Xception: Deep Learning with Depthwise Separable Convolutions" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Reference:" />
+<meta property="og:description" content="Reference:" />
+<link rel="canonical" href="http://localhost:4000/2018/09/09/Xception.html" />
+<meta property="og:url" content="http://localhost:4000/2018/09/09/Xception.html" />
+<meta property="og:site_name" content="Awesome Seminar" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2018-09-09T00:00:00+08:00" />
+<script type="application/ld+json">
+{"headline":"Xception: Deep Learning with Depthwise Separable Convolutions","dateModified":"2018-09-09T00:00:00+08:00","datePublished":"2018-09-09T00:00:00+08:00","mainEntityOfPage":{"@type":"WebPage","@id":"http://localhost:4000/2018/09/09/Xception.html"},"description":"Reference:","@type":"BlogPosting","url":"http://localhost:4000/2018/09/09/Xception.html","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="http://localhost:4000/feed.xml" title="Awesome Seminar" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">Awesome Seminar</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/about/">About</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Xception: Deep Learning with Depthwise Separable Convolutions</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2018-09-09T00:00:00+08:00" itemprop="datePublished">Sep 9, 2018
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <p><strong>Reference:</strong></p>
+
+<ul>
+  <li>Inspiration of Inception: <a href="https://arxiv.org/abs/1312.4400">Network-In-Network</a></li>
+  <li>GoogLeNet (Inception V1): <a href="https://arxiv.org/abs/1409.4842">Going depper with convolutions. (Szegedy et al. 2014)</a></li>
+  <li>Inception V2: <a href="https://arxiv.org/abs/1502.03167">Batch normalization: Accelerating deep network training by reducing internal covariate shift. (Ioffe et al. 2015)</a></li>
+  <li>Inception V3: <a href="https://arxiv.org/abs/1512.00567">Rethinking the inception architecture for computer vision. (Szegedy et al. 2015)</a></li>
+  <li>Inception-ResNet (Inception V4): <a href="https://arxiv.org/abs/1602.07261">Inception-v4, inception-resnet and the impact of residual connections on learning. (Szegedy et al. 2016)</a></li>
+  <li>Xception: <a href="https://arxiv.org/abs/1610.02357">Xception: Deep Learning with Depthwise Separable Convolutions. (Chollet 2016)</a></li>
+  <li><a href="https://medium.com/@francois.chollet/what-worries-me-about-ai-ed9df072b704">François Chollet Blog</a></li>
+  <li><a href="https://www.pyimagesearch.com/2018/07/02/an-interview-with-francois-chollet/">François Chollet’s Interview</a></li>
+</ul>
+
+<h1 id="1-xception">1 Xception</h1>
+
+<p>Inception modules are conceptually similar to convolutions (convolutional feature extractors), they empirically appear to be capable of learning richer representations with less parameters.</p>
+
+<p><strong>Q1: How do they work?</strong></p>
+
+<p><strong>Q2: How do they differ from regular convolutions?</strong></p>
+
+<p><strong>Q3: What design strategies come after Inception?</strong></p>
+
+<h2 id="11-the-inception-hypothesis">1.1 The Inception hypothesis</h2>
+
+<p>传统的卷积核要同时顾及 cross-channel correlation 和 spatial correlation 两方面。</p>
+
+<p>A convolution layer attempts to learn filters in a 3D space, with 2 spatial dimensions (width and height) and a channel dimension; thus <strong>a single convolution kernel is tasked with simultaneously mapping cross-channel correlations and spatial correlations</strong>.</p>
+
+<p>Chollet 认为 Inception 的理念是 —— 分而治之 (但 Inception V1 的出发点并不是这个)。</p>
+
+<p><em>The idea behind the Inception module is to make this process easier and more efficient by explicitly facotring it into a series of operations that would independently look at cross-channel correlations and at spatial correlations.</em></p>
+
+<p><em>Typically, the Inception module first looks as cross-channel correlations via a set of 1x1 convolutions, <strong>mapping the input data into 3 or 4 seperate spaces that are smaller than the original input space</strong>, and then maps all correlations in these smaller 3D spaces, via regular 3x3 or 5x5 convolutions.</em></p>
+
+<p><strong>基础假设:</strong></p>
+
+<p>Cross-channel correlations and spatial correlations are sufficiently decoupled that it is preferable not to map them jointly.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/canonical_inception.png" alt="" /></p>
+
+<p>Consider a simplified version of an Inception module that only uses one size of convolution (e.g. 3x3) and does not include an average pooling tower.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/simplified_inception.png" alt="" /></p>
+
+<p>This Inception module can be reformulated as a large 1x1 convolution followed by spatial convolutions that would operate on non-overlapping segments of the output channels.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/reformulation_inception.png" alt="" /></p>
+
+<blockquote>
+  <p>Question</p>
+</blockquote>
+
+<ul>
+  <li>
+    <p>What is the effect of the number of segments in the partition (and their size)?</p>
+  </li>
+  <li>
+    <p>Would it be reasonable to make a much stronger hypothesis than the Inception hypothesis, and assume that cross-channel correlations and spatial correlations can be mapped completed separately?</p>
+  </li>
+</ul>
+
+<h2 id="12-the-continuum-between-convolutions-and-seperable-convolutions">1.2 The continuum between convolutions and seperable convolutions</h2>
+
+<p>An “extreme” version of an Inception module, based on this stronger hypothesis, would first use a 1x1 convolution to map cross-channel correlations, and would then separately map the spatial correlations of every output channel.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/extreme_inception.png" alt="" /></p>
+
+<p>This extreme form of an Inception module is almost identical to a <em>depthwise separable convolution</em>.</p>
+
+<p>A depthwise separable convolution, commonly called “separable convolution” in TensorFlow and Keras, consists in a <em>depthwise convolution</em>, i.e. a spatial convolution performed independently over each channel of an input, followed by a <em>pointwise convolution</em>, i.e. a 1x1 convolution, projecting the channels output by the depthwise convolution onto a new channel space.</p>
+
+<blockquote>
+  <p>Minor differences</p>
+</blockquote>
+
+<ul>
+  <li><strong>Order of operations:</strong> depthwise separable convolutions as usually implemented perform first channel-wise spatial convolution and then perform 1x1 convolution, whereas Inception performs the 1x1 convolution first.</li>
+  <li>The presence or absence of a non-linearity after the first operation. In Inception, both operations are followed by a ReLU non-linearity, however depthwise separable convolutions are usually implemented without non-linearities.</li>
+</ul>
+
+<p>The first difference is unimportant, in particular because thses operations are meant to be used in a stacked setting.</p>
+
+<p>The second difference might matter, and this paper investigate it in the experimental section.</p>
+
+<h2 id="13-separable-convolution">1.3 Separable Convolution</h2>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/sep_conv.png" alt="" /></p>
+
+<h2 id="14-the-xception-architecture">1.4 The Xception architecture</h2>
+
+<p>Xception(Extreme Inception) is a convolutional neural network architecture based entirely on depthwise separable convolution layers.</p>
+
+<p>It hypothesize that: the mapping of cross-channels correlations and spatial correlations in the feature maps of convolutional neural networks can be <em>entirely</em> decoupled.</p>
+
+<p><strong>In short, the Xception architecture is a linear stack of depthwise separable convolution layers with residual connections.</strong></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Xception.png" alt="" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># (10, 299, 299, 3)</span>
+<span class="n">img_input</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">299</span><span class="p">,</span> <span class="mi">299</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+<span class="c"># (10, 149, 149, 32)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">),</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block1_conv1'</span><span class="p">)(</span><span class="n">img_input</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block1_conv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block1_conv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 147, 147, 64)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block1_conv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block1_conv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block1_conv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 128)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">residual</span><span class="p">)</span>
+
+<span class="c"># (10, 147, 147, 128)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block2_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block2_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block2_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 147, 147, 128)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block2_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block2_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 128)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block2_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 128)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">residual</span><span class="p">])</span>
+
+<span class="c"># (10, 37, 37, 256)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">residual</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 128)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 256)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 74, 74, 256)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block3_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c"># (10, 37, 37, 256)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block3_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">residual</span><span class="p">])</span>
+
+<span class="c"># (10, 19, 19, 728)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">residual</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block4_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block4_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">residual</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="s">'block'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> 
+                               <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> 
+                               <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
+                               <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                               <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                               <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                               <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv3_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                               <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                               <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                               <span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv3'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">prefix</span> <span class="o">+</span> <span class="s">'_sepconv3_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">residual</span><span class="p">])</span>
+
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                             <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">residual</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">()(</span><span class="n">residual</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">728</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                           <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                           <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                           <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                           <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block13_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                        <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                        <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="s">'block13_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">add</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">residual</span><span class="p">])</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">1536</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                           <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                           <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv1'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv1_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv1_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">SeparableConv2D</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span>
+                           <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span>
+                           <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                           <span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv2'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv2_bn'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'block14_sepconv2_act'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">GlobalAveragePooling2D</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'avg_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">'softmax'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'predictions'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h1 id="2-inception-v1">2 Inception-v1</h1>
+
+<p><a href="https://arxiv.org/abs/1409.4842">(Szegedy et al., CVPR’ 15)</a> 提出 <strong>GoogLeNet</strong> (Inception-v1) ，比 AlexNet 少 12 倍的参数，且效果更好。</p>
+
+<p>Inception 浑身散发 “实用主义” 气息，它考虑问题的出发点是 <strong>practical</strong>：因为<strong>计算资源有限</strong>、<strong>标记数据集不足</strong>，所以要求<strong>模型参数数量</strong>不能太多。</p>
+
+<p><em>The network was designed with computational efficiency and practically in mind.</em></p>
+
+<h2 id="21-network-in-network">2.1 Network-in-Network</h2>
+
+<p><a href="https://arxiv.org/abs/1312.4400">(Lin et al., 2013)</a> proposed <strong>Network-in-Network</strong>:</p>
+
+<ul>
+  <li>Increase the representational power of neural networks. (证据不足?)</li>
+  <li>A <strong>dimension reduction</strong> modules to remove computational bottlenecks. (模型性能)</li>
+</ul>
+
+<h3 id="211-problems">2.1.1 Problems</h3>
+
+<p>网络的结构越复杂，容易过拟合，尤其在训练集数据大小有限情况下：</p>
+
+<p><strong>bigger size network</strong> ==&gt; <strong>large number of parameters</strong> ==&gt; <strong>overfitting</strong> ==&gt; <strong>not enough labeled data</strong></p>
+
+<h3 id="212-motivation">2.1.2 Motivation</h3>
+
+<p><strong>Dimension Reduction:</strong> Shrink the number of channels，reduce the number of multiply operations.</p>
+
+<p>对 28x28x192 的输入，如果直接上 5x5x32 的卷积核，需要 120M 的乘法操作。而先加一个 1x1x16 的卷积核将输入压缩成 28x28x16 再上 5x5x32 的卷积核，只需要 12.4M 的乘法操作。</p>
+
+<p>几乎减少了十倍 (虽然 12.4M 直观上已经是个可怕的数量级)。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Conv1_1.png" alt="" /></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Conv1_2.png" alt="" /></p>
+
+<h2 id="22-inception-module">2.2 Inception Module</h2>
+
+<h3 id="221--szegedys-explanation">2.2.1  Szegedy’s explanation</h3>
+
+<p>Szegedy 在论文中的解释是：因为计算资源有限、标记数据不足，限制了模型的 size，需要引入 <strong>sparsity</strong>。</p>
+
+<p><em>Introduce sparsity and replace the fully connected layers by the sparse ones, even inside the convolutions.</em></p>
+
+<p>接着 Szegedy 指出一个难点(没看懂)：</p>
+
+<p><em>Unfortunately, today’s computing infrastructures are very inefficient when it comes to numerical calculation on non-uniform sparse data structures.</em></p>
+
+<p>于是他提出从 filter-level 引入 sparsity：</p>
+
+<p><em>an architecture that makes use of filter-level sparsity</em></p>
+
+<p>以及如何通过现有的 dense components 来构建一个 parse convolution networks：</p>
+
+<p><em>The main idea of the Inception architecture is to consider how an optimal local sparse structure of a convolutional vision network can be approximated and covered by readily available dense components.</em></p>
+
+<p>由于要考虑平移不变形( translation invariance)，所以还是需要使用卷积核：</p>
+
+<p><em>Note that assuming translation invariance means that our network will be built from convolutional building blocks.</em></p>
+
+<p>至于 1x1，3x3 和 5x5 的卷积核选择，则更多是出于方便性的考虑。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Szegedy_v1.png" alt="" /></p>
+
+<p>上图可以表示 Inception-v1 的两个精髓思想：<strong>filter-level sparsity</strong> &amp; <strong>dimensionality reduction</strong></p>
+
+<p><strong>(a)</strong> 是对 filter-level sparsity 的 naive 实现，把 1x1，3x3，5x5 和 MaxPool 直接拼起来。</p>
+
+<p><strong>(b)</strong> 是出于计算量考虑，在 3x3，5x5 前，在 MaxPool 后加上了 1x1 的卷积核，达到 dimensionality reduction 效果。另一点是 Szegedy claims that inspired by <strong>embeddings</strong>: even low dimensional embeddings might contain a lot of information about a relatively large image patch.</p>
+
+<h3 id="222-andrew-ngs-explanation">2.2.2 Andrew Ng’s explanation</h3>
+
+<p>吴恩达的解释更加简略：以前的网络需要人们手工选择卷积核的尺寸，而 Inception Network 中 instead of choosing what filter size you want in conv layer, let’s do them all.</p>
+
+<p>同时在 Previous Activation (28x28x192) 上用 1x1 CONV, 3x3 CONV, 5x5 CONV 和 MaxPool，出于减少计算量原因，在 3x3 CONV 和 5x5 CONV 前要加一个 1x1 CONV。为了让 MaxPool 得到的 layer 少一点，在 MaxPool 后面接一个 1x1 CONV。</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Andrew_incm.png" alt="" /></p>
+
+<h2 id="23-inception-network">2.3 Inception Network</h2>
+
+<p>Inception Network 就是把多个 Inception Module 拼起来，其中会使用 MaxPool 使输入尺寸减半：</p>
+
+<p><em>In general, an Inception network is a network consisting of modules of the above type stacked upon each other, with occasional max-pooling layers with stride 2 to halve the resolution of the grid.</em></p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Andrew_inception.png" alt="" /></p>
+
+<h1 id="3-inception-v2">3 Inception-v2</h1>
+
+<p><a href="https://arxiv.org/abs/1502.03167">(Ioffe et al., ICML’ 15)</a> 提出 Batch Normalization，发现可以大大加快模型训练时间 (可以选更大的 lr)，以及提高准确性。</p>
+
+<p>Ioffe 在 Inception Network 上加了 BN 层得到 Inception-v2 (另外一点是把 5x5 的卷积核用两个连续的 3x3 卷积核替换)。</p>
+
+<h2 id="31-internal-covariate-shift">3.1 Internal Covariate Shift</h2>
+
+<p>模型层数越多，对输入参数的微小变动都可能造成输出结果的剧烈变化。</p>
+
+<p>The training is complicated by the fact that the input to each layer are affected by the parameters of all preceding layers – so that small changes to the network parameters amplify as the network becomes deeper.</p>
+
+<p>The change in the distributions of layers’ inputs presents a problem because the layers need to continuously adapt to the new distribution.</p>
+
+<p>用 sigmoid 做激活函数时，当输入 x 的绝对值很大，会出现梯度消失，训练收敛过慢的问题。对于一个较深的模型，在后面几层就很容易出现这种问题。虽然可以用 ReLU 、careful initialization 和 small learning rates 解决，但如果我们可以确保：</p>
+
+<p><em>distribution of nonlinearity inputs remains more stable as the network trains, then the optimizer would be less likely to get stuck in the saturated regime, and the training would accelerate.</em></p>
+
+<p>Ioffe 把输入的分布变化称作 Internal Covariate Shift：</p>
+
+<p><em>We define Internal Covariate Shift as the change in th distribution of network activations due to the change in network parameters during training.</em></p>
+
+<p>然后 BN 的目的就是使得训练时得到一个稳定的  distribution of activation values：</p>
+
+<p><strong>The goal of Batch Normalization is to achieve a stable distribution of activation values throughout training</strong></p>
+
+<h2 id="32-whitened-inputs">3.2 Whitened Inputs</h2>
+
+<p><a href="http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf">(LeCun et al., 1998)</a> and <a href="https://papers.nips.cc/paper/4421-a-convergence-analysis-of-log-linear-training">(Wiesler &amp; Ney, 2011)</a> showed that the network training converges faster if its inputs are whitened：</p>
+
+<p><em>linearly transformed to have zero means and unit variances, and decorrelated.</em></p>
+
+<p>因为每一层都是接收上一层的输入，因此需要对每一层的 input 做同样的 whitening 操作。</p>
+
+<p><em>By whitening the inputs to each layer, we would take a step towards achieving the fixed distributions of inputs that would remove the ill effects of the internal covariate shift.</em></p>
+
+<h2 id="33-batch-normalization">3.3 Batch Normalization</h2>
+
+<p>具体细节略，可参考 <a href="http://zh.gluon.ai/chapter_convolutional-neural-networks/batch-norm.html">MXNet 教程</a>。</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">num_row</span><span class="p">,</span> <span class="n">num_col</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">Conv2D</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="p">(</span><span class="n">num_row</span><span class="p">,</span> <span class="n">num_col</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="n">strides</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">BatchNormalization</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="bp">False</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x</span>
+</code></pre></div></div>
+
+<h1 id="4-inception-v3">4 Inception-v3</h1>
+
+<p><a href="https://arxiv.org/abs/1512.00567">(Szegedy et al., CVPR’ 16)</a> 采用 factorized convolutions 的方法改变了 Inception Modulde 的结构，得到 Inception-v3。</p>
+
+<p>Szegedy 的出发点还是如何在计算资源受限的条件下，increase model size ==&gt; Scaling up convolution networks in efficient ways.</p>
+
+<h2 id="41-general-design-principles">4.1 General Design Principles</h2>
+
+<p>Szegedy 在文中总结了几条炼丹的经验，他坦言这些经验是 speculative 需要 additional future experimental evidence 来验证。</p>
+
+<p>然后整个 v3 很多结构都是根据这几条丹方设计的，太玄学，不喜欢。</p>
+
+<ol>
+  <li>Avoid representational bottlenecks, especially early in the network. (没看懂)</li>
+  <li>Higher dimensional representations are easier to process locally within a network. (没看懂)</li>
+  <li>Spatial aggregation can be done over lower dimensional embeddings without much or any loss in representational power.</li>
+  <li>Balance the width and depth of the network.</li>
+</ol>
+
+<h2 id="42-factorizing-convolutions">4.2 Factorizing Convolutions</h2>
+
+<p>Szegedy 的出发点都是从 CV 来的，值得注意的是：不能盲目套用，削足适履，要看应用场景是否符合模型的前提假设。</p>
+
+<p>In a vision network, it is expected that the outputs of near-by activations are highly correlated. Therefore, we can expect that their activations can be reduced before aggregation and that this should result in similarity expressive local representations.</p>
+
+<p>因为大尺寸的卷积核计算开销高，比如 5x5 的卷积核比 3x3 的卷积核计算量大 25/9 = 2.78 倍。</p>
+
+<p>Szegedy 考虑是否能用更少参数的结构来替换 5x5 的卷积核：</p>
+
+<p>If we zoom into the computation graph of the 5 × 5 convolution, we see that each output looks like a small fully-connected network sliding over 5 × 5 tiles over its input (see Figure 1).</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/factorize_conv.png" alt="" /></p>
+
+<p>Since we are constructing a vision network, it seems natural to exploit translation invariance again and replace the fully connected component by a two layer convolutional architecture: the first layer is a 3 × 3 convolution, the second is a
+fully connected layer on top of the 3 × 3 output grid of the first layer (see Figure 1).</p>
+
+<p>Sliding this small network over the input activation grid boils down to replacing the 5 × 5 convolution with two layers of 3 × 3 convolution (compare Figure 4 with 5).</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/5x5_3x3.png" alt="" /></p>
+
+<h2 id="43-split-in-asymmetric-convolutions">4.3 Split in Asymmetric Convolutions</h2>
+
+<p>Further, we can use a 3 × 1 convolution followed by a 1 × 3 convolution is equivalent to sliding a two layer network with the same receptive field as in a 3 × 3 convolution (see figure 3).</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/nx1.png" alt="" /></p>
+
+<p>In theory, we could go even further and argue that one can replace any n × n convolution by a 1 × n convolution followed by a n × 1 convolution and the computational cost saving increases dramatically as n grows (see figure 6).</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/17_1xn.png" alt="" /></p>
+
+<h2 id="44-inception-v3">4.4 Inception-v3</h2>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/incv_3.png" alt="" /></p>
+
+<p>我有个很大的疑问：在 1x1 CONV 之前 x 的 channel 数为什么要从 60 增加到 80 再增加到 192？</p>
+
+<p>这样做看起来就像是为了用 Dimension Reduction 而刻意这么做的，完全无法理解为什么要突然把 channel 的数量突然提到那么大。</p>
+
+<p>而且不同层里面 filter 的个数更无法理解，这方面的解释性差了很多，让人不爽。</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># keras 中实现的 inception-v3 结构上和论文中的有些不同</span>
+
+<span class="c"># (10, 299, 299, 3) --&gt; (10, 149, 149, 32)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">img_input</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>      <span class="c"># (10, 147, 147, 32)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>                       <span class="c"># (10, 147, 147, 64)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>      <span class="c"># (10, 73, 73, 64)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>      <span class="c"># (10, 73, 73, 80)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>     <span class="c"># (10, 71, 71, 192)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>      <span class="c"># (10, 35, 35, 192)</span>
+
+<span class="c"># mixed 0, 1, 2: 35 x 35 x 256</span>
+<span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># (10, 35, 35, 64)</span>
+
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># (10, 35, 35, 48)</span>
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch5x5</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>       <span class="c"># (10, 35, 35, 64)</span>
+
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>            <span class="c"># (10, 35, 35, 64)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c"># (10, 35, 35, 96)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c"># (10, 35, 35, 96)</span>
+
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>    <span class="c"># (10, 35, 35, 192)</span>
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>   <span class="c"># (10, 35, 35, 32)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch5x5</span><span class="p">,</span> <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+    <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">'mixed0'</span><span class="p">)</span>                               <span class="c"># (10, 35, 35, 256)</span>
+
+<span class="c"># mixed 1: 35 x 35 x 288</span>
+<span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># (10, 35, 35, 64)</span>
+
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># (10, 35, 35, 48)</span>
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch5x5</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>       <span class="c"># (10, 35, 35, 64)</span>
+
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>            <span class="c"># (10, 35, 35, 64)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c"># (10, 35, 35, 96)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c"># (10, 35, 35, 96)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>    <span class="c"># (10, 35, 35, 256)</span>
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>   <span class="c"># (10, 35, 35, 64)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch5x5</span><span class="p">,</span> <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+    <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">'mixed1'</span><span class="p">)</span>                               <span class="c"># (10, 35, 35, 288)</span>
+
+<span class="c"># mixed 2: 35 x 35 x 256</span>
+<span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch5x5</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch5x5</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch5x5</span><span class="p">,</span> <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+    <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">'mixed2'</span><span class="p">)</span>
+
+<span class="c"># mixed 3: 17 x 17 x 768</span>
+<span class="n">branch3x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>
+
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span>
+    <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch3x3</span><span class="p">,</span> <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'mixed3'</span><span class="p">)</span>
+
+<span class="c"># mixed 4: 17 x 17 x 768</span>
+<span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch7x7</span><span class="p">,</span> <span class="n">branch7x7dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+    <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">'mixed4'</span><span class="p">)</span>
+
+<span class="c"># mixed 5, 6: 17 x 17 x 768</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+    <span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+    <span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+
+    <span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">(</span>
+        <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch7x7</span><span class="p">,</span> <span class="n">branch7x7dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'mixed'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">i</span><span class="p">))</span>
+
+<span class="c"># mixed 7: 17 x 17 x 768</span>
+<span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">branch7x7</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7dbl</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch7x7</span><span class="p">,</span> <span class="n">branch7x7dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+    <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s">'mixed7'</span><span class="p">)</span>
+
+<span class="c"># mixed 8: 8 x 8 x 1280</span>
+<span class="n">branch3x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch3x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span>
+                      <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>
+
+<span class="n">branch7x7x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7x3</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="n">branch7x7x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch7x7x3</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">branch7x7x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span>
+    <span class="n">branch7x7x3</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'valid'</span><span class="p">)</span>
+
+<span class="n">branch_pool</span> <span class="o">=</span> <span class="n">MaxPooling2D</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">branch3x3</span><span class="p">,</span> <span class="n">branch7x7x3</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'mixed8'</span><span class="p">)</span>
+
+<span class="c"># mixed 9: 8 x 8 x 2048</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+    <span class="n">branch1x1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">branch3x3</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch3x3_1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">branch3x3_2</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch3x3</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">branch3x3_1</span><span class="p">,</span> <span class="n">branch3x3_2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'mixed9_'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+    <span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">448</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">branch3x3dbl_1</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">branch3x3dbl_2</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch3x3dbl</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">branch3x3dbl</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">branch3x3dbl_1</span><span class="p">,</span> <span class="n">branch3x3dbl_2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">)</span>
+
+    <span class="n">branch_pool</span> <span class="o">=</span> <span class="n">AveragePooling2D</span><span class="p">(</span>
+        <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s">'same'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">branch_pool</span> <span class="o">=</span> <span class="n">conv2d_bn</span><span class="p">(</span><span class="n">branch_pool</span><span class="p">,</span> <span class="mi">192</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">branch1x1</span><span class="p">,</span> <span class="n">branch3x3</span><span class="p">,</span> <span class="n">branch3x3dbl</span><span class="p">,</span> <span class="n">branch_pool</span><span class="p">],</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">channel_axis</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s">'mixed'</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="mi">9</span> <span class="o">+</span> <span class="n">i</span><span class="p">))</span>
+
+<span class="c"># Classification block</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">GlobalAveragePooling2D</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s">'avg_pool'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">Dense</span><span class="p">(</span><span class="n">classes</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s">'softmax'</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">'predictions'</span><span class="p">)(</span><span class="n">x</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h1 id="5-inception-v4">5 Inception-v4</h1>
+
+<p><a href="https://arxiv.org/abs/1602.07261">(Szegedy et al., AAAI’ 17)</a> 中提出了精简后的 Inception-v4 及 Inception-ResNet-v1、Inception-ResNet-v2。</p>
+
+<p>Inception-ResNet 的想法非常直接：Inception + ResNet，并通过实证发现 residual connections 可以加快模型训练时间，明显提升模型效果。</p>
+
+<h2 id="51-inception--resnet">5.1 Inception &amp; ResNet</h2>
+
+<p><strong>Observasions:</strong></p>
+
+<ol>
+  <li>
+    <p><a href="">He et al. 2015</a> points out that residual  connections are inherently important for training very deep architectures.</p>
+  </li>
+  <li>
+    <p>Inception networks tend to be very deep.</p>
+  </li>
+</ol>
+
+<p><strong>Solutions:</strong></p>
+
+<p>Replace the filter concatenation stage of the Inception architecture with residual connections.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/Residual_connect.png" alt="" /></p>
+
+<h2 id="52-architecture">5.2 Architecture</h2>
+
+<p>Inception architecture is highly tunable, meaning that there are a lot of possible changes to the number of filters in the various layers that do not affect the quality of the fully trained network. ==&gt; 是否意味着各层中 number of filters 的作用不大？</p>
+
+<p>在 v4 版之前，出于 memory restriction 的限制 (非 TF 实现，Memory 使用效率低，有一些非必要的限制) ==&gt; Not simplifying earlier choices resulted in networks that looked more complicated that they needed to be。</p>
+
+<p>Inception-v4 we decided to shed this unnecessary baggage and made uniform choices for the Inception blocks for each grid size.</p>
+
+<h3 id="521-inception-block">5.2.1 Inception Block</h3>
+
+<p>Each inception block is followed by filter-expansion layer (1x1 convolution without activation) which is used for scaling uo the dimensionality of the filter bank before the residual addition to match the depth of the input. This is needed to compensate for the dimensionality reduction induced by the Inception block.</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/inceptionv4.png" alt="" /></p>
+
+<p>其中三个不同的 Inception Module:</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/inceptionv41.png" alt="" /></p>
+
+<h3 id="522-inception-resnet">5.2.2 Inception ResNet</h3>
+
+<p>Overall schema for Inception-Resnet-v1(v2):</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/inceptionv12.png" alt="" /></p>
+
+<p>Interior grid modules of Inception-ResNet Networks:</p>
+
+<p><img src="http://oi3xms5do.bkt.clouddn.com/IncRes12.png" alt="" /></p>
+
+  </div>
+
+
+  <a class="u-url" href="/2018/09/09/Xception.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+<!--     <h2 class="footer-heading">Awesome Seminar</h2>
+ -->
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Awesome Seminar</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>A website for sharing seminar notes.
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
